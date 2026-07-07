@@ -2,11 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Validade</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f8;
+      margin: 0;
       padding: 20px;
     }
 
@@ -15,19 +18,21 @@
       margin: auto;
       background: white;
       padding: 25px;
-      border-radius: 14px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.08);
+      border-radius: 16px;
+      box-shadow: 0 0 14px rgba(0,0,0,0.10);
     }
 
     h1 {
       text-align: center;
+      color: #222;
+      margin-bottom: 20px;
     }
 
     input {
       width: 100%;
-      padding: 14px;
+      padding: 15px;
       font-size: 18px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: 1px solid #ccc;
       margin-bottom: 20px;
       box-sizing: border-box;
@@ -40,101 +45,187 @@
     }
 
     .card img {
-      max-width: 220px;
-      max-height: 220px;
+      max-width: 240px;
+      max-height: 240px;
       object-fit: contain;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
     }
 
     .info {
       font-size: 18px;
-      margin: 8px 0;
+      margin: 10px 0;
     }
 
-    .verde { color: green; font-weight: bold; }
-    .amarelo { color: #c58b00; font-weight: bold; }
-    .vermelho { color: red; font-weight: bold; }
-    .vazio { text-align: center; color: #777; }
+    .validade {
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .verde {
+      color: green;
+      font-weight: bold;
+    }
+
+    .amarelo {
+      color: #c58b00;
+      font-weight: bold;
+    }
+
+    .vermelho {
+      color: red;
+      font-weight: bold;
+    }
+
+    .vazio {
+      text-align: center;
+      color: #777;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    .erro-img {
+      width: 220px;
+      height: 160px;
+      margin: auto;
+      margin-bottom: 18px;
+      background: #eee;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      font-size: 16px;
+    }
   </style>
 </head>
+
 <body>
 
-<div class="container">
-  <h1>Consulta de Validade</h1>
+  <div class="container">
+    <h1>Consulta de Validade</h1>
 
-  <input type="text" id="pesquisa" placeholder="Digite o código do produto">
+    <input 
+      type="text" 
+      id="pesquisa" 
+      placeholder="Digite o código do produto"
+      autocomplete="off"
+    >
 
-  <div id="resultado" class="vazio">Digite um código para consultar.</div>
-</div>
+    <div id="resultado" class="vazio">
+      Digite um código para consultar.
+    </div>
+  </div>
 
-<script>
-const urlCSV = "COLE_AQUI_O_LINK_CSV_DA_PLANILHA";
+  <script>
+    const urlCSV = "COLE_AQUI_O_LINK_CSV_DA_PLANILHA";
 
-let dados = [];
+    let dados = [];
 
-function converterDataBR(data) {
-  const partes = data.split("/");
-  return new Date(partes[2], partes[1] - 1, partes[0]);
-}
+    function converterDataBR(data) {
+      const partes = data.split("/");
+      return new Date(partes[2], partes[1] - 1, partes[0]);
+    }
 
-function calcularStatus(validade) {
-  const hoje = new Date();
-  const dataValidade = converterDataBR(validade);
-  const dias = Math.ceil((dataValidade - hoje) / (1000 * 60 * 60 * 24));
+    function calcularStatus(validade) {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
 
-  if (dias <= 30) {
-    return { texto: "Crítico", classe: "vermelho", dias };
-  } else if (dias <= 60) {
-    return { texto: "Atenção", classe: "amarelo", dias };
-  } else {
-    return { texto: "Saudável", classe: "verde", dias };
-  }
-}
+      const dataValidade = converterDataBR(validade);
+      const dias = Math.ceil((dataValidade - hoje) / (1000 * 60 * 60 * 24));
 
-fetch(urlCSV)
-  .then(response => response.text())
-  .then(csv => {
-    const linhas = csv.trim().split("\n").map(l => l.split(","));
+      if (dias <= 30) {
+        return { texto: "Crítico", classe: "vermelho", dias };
+      } else if (dias <= 60) {
+        return { texto: "Atenção", classe: "amarelo", dias };
+      } else {
+        return { texto: "Saudável", classe: "verde", dias };
+      }
+    }
 
-    dados = linhas.slice(1).map(linha => ({
-      codigo: linha[0]?.trim(),
-      produto: linha[1]?.trim(),
-      validade: linha[2]?.trim(),
-      foto: linha[3]?.trim()
-    }));
-  });
+    function carregarImagem(codigo, produto) {
+      const formatos = ["png", "jpg", "jpeg"];
+      let indice = 0;
 
-document.getElementById("pesquisa").addEventListener("input", function() {
-  const codigo = this.value.trim();
-  const resultado = document.getElementById("resultado");
+      const img = document.createElement("img");
+      img.alt = produto;
 
-  if (!codigo) {
-    resultado.innerHTML = "Digite um código para consultar.";
-    resultado.className = "vazio";
-    return;
-  }
+      function tentarImagem() {
+        if (indice >= formatos.length) {
+          const div = document.createElement("div");
+          div.className = "erro-img";
+          div.innerText = "Imagem não disponível";
+          img.replaceWith(div);
+          return;
+        }
 
-  const item = dados.find(produto => produto.codigo === codigo);
+        img.src = `imagens/${codigo}.${formatos[indice]}`;
 
-  if (!item) {
-    resultado.innerHTML = "Nenhum produto encontrado.";
-    resultado.className = "vazio";
-    return;
-  }
+        img.onerror = function() {
+          indice++;
+          tentarImagem();
+        };
+      }
 
-  const status = calcularStatus(item.validade);
+      tentarImagem();
+      return img;
+    }
 
-  resultado.className = "card";
-  resultado.innerHTML = `
-    <img src="${item.foto}" alt="${item.produto}">
-    <div class="info"><strong>Código:</strong> ${item.codigo}</div>
-    <div class="info"><strong>Produto:</strong> ${item.produto}</div>
-    <div class="info"><strong>Validade:</strong> ${item.validade}</div>
-    <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
-    <div class="info ${status.classe}"><strong>Status:</strong> ${status.texto}</div>
-  `;
-});
-</script>
+    function carregarDados() {
+      fetch(urlCSV)
+        .then(response => response.text())
+        .then(csv => {
+          const linhas = csv.trim().split("\n").map(linha => linha.split(","));
+
+          dados = linhas.slice(1).map(linha => ({
+            codigo: linha[0]?.trim(),
+            produto: linha[1]?.trim(),
+            validade: linha[2]?.trim()
+          }));
+        })
+        .catch(() => {
+          document.getElementById("resultado").innerHTML =
+            "Erro ao carregar a base de dados.";
+        });
+    }
+
+    document.getElementById("pesquisa").addEventListener("input", function() {
+      const codigo = this.value.trim();
+      const resultado = document.getElementById("resultado");
+
+      if (!codigo) {
+        resultado.innerHTML = "Digite um código para consultar.";
+        resultado.className = "vazio";
+        return;
+      }
+
+      const item = dados.find(produto => produto.codigo === codigo);
+
+      if (!item) {
+        resultado.innerHTML = "Nenhum produto encontrado.";
+        resultado.className = "vazio";
+        return;
+      }
+
+      const status = calcularStatus(item.validade);
+
+      resultado.className = "card";
+      resultado.innerHTML = "";
+
+      const imagem = carregarImagem(item.codigo, item.produto);
+      resultado.appendChild(imagem);
+
+      resultado.innerHTML += `
+        <div class="info"><strong>Código:</strong> ${item.codigo}</div>
+        <div class="info"><strong>Produto:</strong> ${item.produto}</div>
+        <div class="validade"><strong>Validade:</strong> ${item.validade}</div>
+        <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
+        <div class="info ${status.classe}"><strong>Status:</strong> ${status.texto}</div>
+      `;
+    });
+
+    carregarDados();
+  </script>
 
 </body>
 </html>
