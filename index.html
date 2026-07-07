@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Consulta de Validade</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+    }
+
+    .card {
+      text-align: center;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+
+    .card img {
+      max-width: 220px;
+      max-height: 220px;
+      object-fit: contain;
+      margin-bottom: 15px;
+    }
+
+    .info {
+      font-size: 18px;
+      margin: 8px 0;
+    }
+
+    .verde { color: green; font-weight: bold; }
+    .amarelo { color: #c58b00; font-weight: bold; }
+    .vermelho { color: red; font-weight: bold; }
+    .vazio { text-align: center; color: #777; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Consulta de Validade</h1>
+
+  <input type="text" id="pesquisa" placeholder="Digite o código do produto">
+
+  <div id="resultado" class="vazio">Digite um código para consultar.</div>
+</div>
+
+<script>
+const urlCSV = "COLE_AQUI_O_LINK_CSV_DA_PLANILHA";
+
+let dados = [];
+
+function converterDataBR(data) {
+  const partes = data.split("/");
+  return new Date(partes[2], partes[1] - 1, partes[0]);
+}
+
+function calcularStatus(validade) {
+  const hoje = new Date();
+  const dataValidade = converterDataBR(validade);
+  const dias = Math.ceil((dataValidade - hoje) / (1000 * 60 * 60 * 24));
+
+  if (dias <= 30) {
+    return { texto: "Crítico", classe: "vermelho", dias };
+  } else if (dias <= 60) {
+    return { texto: "Atenção", classe: "amarelo", dias };
+  } else {
+    return { texto: "Saudável", classe: "verde", dias };
+  }
+}
+
+fetch(urlCSV)
+  .then(response => response.text())
+  .then(csv => {
+    const linhas = csv.trim().split("\n").map(l => l.split(","));
+
+    dados = linhas.slice(1).map(linha => ({
+      codigo: linha[0]?.trim(),
+      produto: linha[1]?.trim(),
+      validade: linha[2]?.trim(),
+      foto: linha[3]?.trim()
+    }));
+  });
+
+document.getElementById("pesquisa").addEventListener("input", function() {
+  const codigo = this.value.trim();
+  const resultado = document.getElementById("resultado");
+
+  if (!codigo) {
+    resultado.innerHTML = "Digite um código para consultar.";
+    resultado.className = "vazio";
+    return;
+  }
+
+  const item = dados.find(produto => produto.codigo === codigo);
+
+  if (!item) {
+    resultado.innerHTML = "Nenhum produto encontrado.";
+    resultado.className = "vazio";
+    return;
+  }
+
+  const status = calcularStatus(item.validade);
+
+  resultado.className = "card";
+  resultado.innerHTML = `
+    <img src="${item.foto}" alt="${item.produto}">
+    <div class="info"><strong>Código:</strong> ${item.codigo}</div>
+    <div class="info"><strong>Produto:</strong> ${item.produto}</div>
+    <div class="info"><strong>Validade:</strong> ${item.validade}</div>
+    <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
+    <div class="info ${status.classe}"><strong>Status:</strong> ${status.texto}</div>
+  `;
+});
+</script>
+
+</body>
+</html>
