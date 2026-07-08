@@ -254,13 +254,21 @@
         const imagem = carregarImagem(item.codigo, item.produto);
         card.appendChild(imagem);
     
-        card.innerHTML += `
-          <div class="info"><strong>Código:</strong> ${item.codigo}</div>
-          <div class="info"><strong>Produto:</strong> ${item.produto}</div>
-          <div class="validade"><strong>Validade mais próxima:</strong> ${item.validade}</div>
-          <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
-        `;
-    
+        if (status.dias > 90) {
+          card.innerHTML += `
+            <div class="info"><strong>Código:</strong> ${item.codigo}</div>
+            <div class="info"><strong>Produto:</strong> ${item.produto}</div>
+            <div class="validade verde">Produto com Validade acima de 90 dias!</div>
+          `;
+        } else {
+          card.innerHTML += `
+            <div class="info"><strong>Código:</strong> ${item.codigo}</div>
+            <div class="info"><strong>Produto:</strong> ${item.produto}</div>
+            <div class="validade"><strong>Validade mais próxima:</strong> ${item.validade}</div>
+            <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
+            <div class="info ${status.classe}"><strong>Status:</strong> ${status.texto}</div>
+          `;
+        }
         resultado.appendChild(card);
       });
     });
