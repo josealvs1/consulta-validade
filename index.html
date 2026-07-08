@@ -189,38 +189,56 @@
     }
 
     document.getElementById("pesquisa").addEventListener("input", function() {
-      const codigo = this.value.trim();
-      const resultado = document.getElementById("resultado");
+  const termo = this.value.trim().toLowerCase();
+  const resultado = document.getElementById("resultado");
 
-      if (!codigo) {
-        resultado.innerHTML = "Digite um código para consultar.";
-        resultado.className = "vazio";
-        return;
-      }
+  if (!termo) {
+    resultado.innerHTML = "Digite o código ou nome do produto para consultar.";
+    resultado.className = "vazio";
+    return;
+  }
 
-      const item = dados.find(produto => produto.codigo === codigo);
+  const palavras = termo.split(" ").filter(p => p);
 
-      if (!item) {
-        resultado.innerHTML = "Nenhum produto encontrado.";
-        resultado.className = "vazio";
-        return;
-      }
+  const encontrados = dados.filter(item => {
+    const codigo = item.codigo.toLowerCase();
+    const produto = item.produto.toLowerCase();
 
-      const status = calcularStatus(item.validade);
+    const buscaPorCodigo = codigo === termo;
+    const buscaPorNome = palavras.every(palavra => produto.includes(palavra));
 
-      resultado.className = "card";
-      resultado.innerHTML = "";
+    return buscaPorCodigo || buscaPorNome;
+  });
 
-      const imagem = carregarImagem(item.codigo, item.produto);
-      resultado.appendChild(imagem);
+  if (encontrados.length === 0) {
+    resultado.innerHTML = "Nenhum produto encontrado.";
+    resultado.className = "vazio";
+    return;
+  }
 
-      resultado.innerHTML += `
-        <div class="info"><strong>Código:</strong> ${item.codigo}</div>
-        <div class="info"><strong>Produto:</strong> ${item.produto}</div>
-        <div class="validade"><strong>Validade:</strong> ${item.validade}</div>
-        <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
-      `;
-    });
+  resultado.className = "";
+  resultado.innerHTML = "";
+
+  encontrados.forEach(item => {
+    const status = calcularStatus(item.validade);
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const imagem = carregarImagem(item.codigo, item.produto);
+    card.appendChild(imagem);
+
+    card.innerHTML += `
+      <div class="info"><strong>Código:</strong> ${item.codigo}</div>
+      <div class="info"><strong>Produto:</strong> ${item.produto}</div>
+      <div class="validade"><strong>Validade:</strong> ${item.validade}</div>
+      <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
+      <div class="info ${status.classe}"><strong>Status:</strong> ${status.texto}</div>
+    `;
+
+    resultado.appendChild(card);
+  });
+});
 
     carregarDados();
   </script>
