@@ -135,7 +135,6 @@
     <div class="cabecalho">
       <img src="Disbecollogo.png" class="logo" alt="Logo Disbecol">
       <h1>Consulta de Validades</h1>
-      <div class="subtitulo">Pesquise pelo código ou nome do produto</div>
     </div>
 
     <input 
@@ -231,7 +230,7 @@
       const resultado = document.getElementById("resultado");
 
       if (!termo) {
-        resultado.innerHTML = "Digite um código ou nome para consultar.";
+        resultado.innerHTML = "";
         resultado.className = "vazio";
         return;
       }
