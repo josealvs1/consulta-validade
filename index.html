@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Consulta de Validade</title>
+  <title>Disbecol | Consulta de Validades</title>
+  <link rel="icon" type="image/png" href="Disbecol.png">
 
   <style>
     body {
@@ -14,17 +15,34 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 650px;
       margin: auto;
       background: white;
       padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 0 14px rgba(0,0,0,0.10);
+      border-radius: 18px;
+      box-shadow: 0 0 16px rgba(0,0,0,0.10);
+    }
+
+    .cabecalho {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .logo {
+      width: 260px;
+      max-width: 90%;
+      margin-bottom: 12px;
     }
 
     h1 {
-      text-align: center;
       color: #222;
+      margin: 10px 0 5px;
+      font-size: 26px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 14px;
       margin-bottom: 20px;
     }
 
@@ -41,7 +59,8 @@
     .card {
       text-align: center;
       border-top: 1px solid #ddd;
-      padding-top: 20px;
+      padding-top: 22px;
+      margin-top: 18px;
     }
 
     .card img {
@@ -57,7 +76,7 @@
     }
 
     .validade {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: bold;
       margin-top: 15px;
     }
@@ -97,13 +116,27 @@
       color: #777;
       font-size: 16px;
     }
+
+    .rodape {
+      text-align: center;
+      color: #777;
+      font-size: 12px;
+      margin-top: 30px;
+      border-top: 1px solid #eee;
+      padding-top: 15px;
+    }
   </style>
 </head>
 
 <body>
 
   <div class="container">
-    <h1>Consulta de Validade</h1>
+
+    <div class="cabecalho">
+      <img src="Disbecol.png" class="logo" alt="Logo Disbecol">
+      <h1>Consulta de Validades</h1>
+      <div class="subtitulo">Pesquise pelo código ou nome do produto</div>
+    </div>
 
     <input 
       type="text" 
@@ -113,8 +146,13 @@
     >
 
     <div id="resultado" class="vazio">
-      Digite um código ou nome do produto para consultar.
+      Digite um código ou nome para consultar.
     </div>
+
+    <div class="rodape">
+      Sistema de Consulta de Validades - Disbecol
+    </div>
+
   </div>
 
   <script>
@@ -146,10 +184,10 @@
     function carregarImagem(codigo, produto) {
       const formatos = ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"];
       let indice = 0;
-    
+
       const img = document.createElement("img");
       img.alt = produto;
-    
+
       function tentarImagem() {
         if (indice >= formatos.length) {
           const div = document.createElement("div");
@@ -158,21 +196,21 @@
           img.replaceWith(div);
           return;
         }
-    
+
         img.onerror = function() {
           indice++;
           tentarImagem();
         };
-    
+
         img.src = `imagens/${codigo}.${formatos[indice]}`;
       }
-    
+
       tentarImagem();
       return img;
     }
 
     function carregarDados() {
-      fetch(urlCSV)
+      fetch(urlCSV + "&t=" + new Date().getTime())
         .then(response => response.text())
         .then(csv => {
           const linhas = csv.trim().split("\n").map(linha => linha.split(","));
@@ -192,68 +230,67 @@
     document.getElementById("pesquisa").addEventListener("input", function() {
       const termo = this.value.trim().toLowerCase();
       const resultado = document.getElementById("resultado");
-    
+
       if (!termo) {
-        resultado.innerHTML = "Digite o código ou nome do produto para consultar.";
+        resultado.innerHTML = "Digite um código ou nome para consultar.";
         resultado.className = "vazio";
         return;
       }
-    
+
       const palavras = termo.split(" ").filter(p => p);
-    
+
       let encontrados = dados.filter(item => {
         const codigo = item.codigo.toLowerCase();
         const produto = item.produto.toLowerCase();
-    
+
         const buscaPorCodigo = codigo === termo;
         const buscaPorNome = palavras.every(palavra => produto.includes(palavra));
-    
+
         return buscaPorCodigo || buscaPorNome;
       });
-    
+
       if (encontrados.length === 0) {
         resultado.innerHTML = "Nenhum produto encontrado.";
         resultado.className = "vazio";
         return;
       }
-    
-      // Agrupa por código e mantém apenas a menor validade
+
       const mapa = new Map();
-    
+
       encontrados.forEach(item => {
         const chave = item.codigo;
         const statusAtual = calcularStatus(item.validade);
-    
+
         if (!mapa.has(chave)) {
           mapa.set(chave, item);
         } else {
           const itemExistente = mapa.get(chave);
           const statusExistente = calcularStatus(itemExistente.validade);
-    
+
           if (statusAtual.dias < statusExistente.dias) {
             mapa.set(chave, item);
           }
         }
       });
-    
+
       encontrados = Array.from(mapa.values());
-    
+
       encontrados.sort((a, b) => {
         return calcularStatus(a.validade).dias - calcularStatus(b.validade).dias;
       });
-    
+
       resultado.className = "";
       resultado.innerHTML = "";
-    
+
       encontrados.forEach(item => {
         const status = calcularStatus(item.validade);
-    
+
         const card = document.createElement("div");
         card.className = "card";
-    
+
         const imagem = carregarImagem(item.codigo, item.produto);
         card.appendChild(imagem);
-    
+
         if (status.dias > 120) {
           card.innerHTML += `
             <div class="info"><strong>Código:</strong> ${item.codigo}</div>
@@ -268,6 +305,7 @@
             <div class="info"><strong>Dias para vencer:</strong> ${status.dias}</div>
           `;
         }
+
         resultado.appendChild(card);
       });
     });
