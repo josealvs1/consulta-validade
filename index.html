@@ -254,11 +254,11 @@
         const imagem = carregarImagem(item.codigo, item.produto);
         card.appendChild(imagem);
     
-        if (status.dias > 90) {
+        if (status.dias > 120) {
           card.innerHTML += `
             <div class="info"><strong>Código:</strong> ${item.codigo}</div>
             <div class="info"><strong>Produto:</strong> ${item.produto}</div>
-            <div class="validade verde">Produto com Validade acima de 90 dias!</div>
+            <div class="validade verde">Produto com Validade acima de 120 dias!</div>
           `;
         } else {
           card.innerHTML += `
